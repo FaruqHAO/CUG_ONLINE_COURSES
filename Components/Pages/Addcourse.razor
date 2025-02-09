@@ -1,0 +1,107 @@
+﻿@page "/Addcourse"
+@rendermode InteractiveServer
+
+@using CUG_ONLINE_COURSES.Data
+@using CUG_ONLINE_COURSES.Models
+@using CUG_ONLINE_COURSES.Services.RolesServices
+@using Microsoft.AspNetCore.Authorization
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@attribute [Authorize(Roles = $"{AuthenticationInitalData.SuperAdminRole}")]
+
+@inject IRoleService _roleManagerService
+@inject NavigationManager Navigation
+
+<PageTitle>Add Course</PageTitle>
+<h3>Addcourse</h3>
+@if (Lecturers == null)
+{
+    <p><em>Loading...</em></p>
+}else
+{
+<EditForm Model="NewCourse" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label class="form-label">Course Code</label>
+        <InputText class="form-control" @bind-Value="NewCourse.CourseCode" placeholder="Course Code" />
+        <ValidationMessage For="@(() => NewCourse.CourseCode)" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Course Name</label>
+            <InputText class="form-control" @bind-Value="NewCourse.CourseName" placeholder="Course Name" />
+        <ValidationMessage For="@(() => NewCourse.CourseName)" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Faculty</label>
+        <InputSelect class="form-control" @bind-Value="NewCourse.Faculty">
+            <option value="">-- Select Faculty --</option>
+            @foreach (var faculty in Faculties)
+            {
+                <option value="@faculty">@faculty</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewCourse.Faculty)" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Assigned Lecturer</label>
+        <InputSelect class="form-control" @bind-Value="NewCourse.AssignedLecturer">
+            <option value="">-- Select Lecturer --</option>
+            @foreach (var lecturer in Lecturers)
+            {
+                <option value="@lecturer.AdminID">@lecturer.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => NewCourse.AssignedLecturer)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Course</button>
+</EditForm>
+}
+
+@code {
+    private Course NewCourse = new Course();
+
+    List<Admin> Lecturers;
+    private bool PageLoading;
+    protected override async Task OnInitializedAsync()
+    {
+        PageLoading = true;
+        await Task.Delay(100);
+        Lecturers = await _roleManagerService.GetAllStaff();
+        PageLoading = false;
+    }
+
+    private List<string> Faculties = new List<string>
+    {
+        "CEM", "Nursing", "Education", "Religion","IBM"
+    };
+    private async void HandleValidSubmit()
+    {
+       
+        var response = await _roleManagerService.AddCourse(NewCourse);
+        if (response == true)
+        {
+            // Redirect after saving
+             Navigation.NavigateTo("/coursemanager"); // Change to actual course list page
+
+        }
+        else
+        {
+            // Save to database or perform any action
+            Console.WriteLine($"Course: {NewCourse.CourseName}, Faculty: {NewCourse.Faculty}, Lecturer: {NewCourse.AssignedLecturer}");
+
+        }
+        
+
+        // Redirect after saving
+       // Navigation.NavigateTo("/coursemanager"); // Change to actual course list page
+    }
+
+    
+}

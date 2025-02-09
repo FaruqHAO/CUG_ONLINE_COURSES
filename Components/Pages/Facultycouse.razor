@@ -1,0 +1,101 @@
+﻿@page "/Facultycouse/{facultyId}"
+@rendermode InteractiveServer
+@using BlazorBootstrap
+@using CUG_ONLINE_COURSES.Data
+@using CUG_ONLINE_COURSES.Models
+@using CUG_ONLINE_COURSES.Services.RolesServices
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = $"{AuthenticationInitalData.SuperAdminRole},{AuthenticationInitalData.StudentRole}")]
+@inject IRoleService _roleManagerService
+@inject ILogger<ManageRoles> Logger
+<PageTitle>Faculty Course</PageTitle>
+<div class="card">
+    <div class="card-header">
+        @facultyId Courses
+    </div>
+    <div class="card-body">
+        @if (Facultycourses == null || !Facultycourses.Any())
+        {
+            <p><em>Loading or no courses available...</em></p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Course Code</th>
+                        <th>Course Name</th>
+                        <th>Assigned Lectuer</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var (course, index) in Facultycourses.Select((course, i) => (course, i + 1)))
+                    {
+                        <tr>
+
+                            <td>@index</td>
+                            <td>@course.CourseCode</td>
+                            <td>@course.CourseName</td>
+                            <td>@course.AssignedLecturerName</td>
+
+                            <td>
+                                <button type="button" class="btn btn-info" onclick="window.location.href='viewadmin/@course.CourseCode'"><i class="bi bi-pencil-square me-1"></i>Register</button>
+                             </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+
+@code {
+
+
+    [Parameter]
+    public string? facultyId { get; set; }
+
+    List<Course> Facultycourses;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            await FetchFacultyCourse();
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching Couses: {ex.Message}");
+        }
+    }
+    private async Task FetchFacultyCourse()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(facultyId))
+            {
+                try
+                {
+                    Facultycourses = await _roleManagerService.GetAllFacultyCoursesAsync(facultyId);
+                   
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching user details: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching users: {ex.Message}");
+        }
+    }
+
+}
